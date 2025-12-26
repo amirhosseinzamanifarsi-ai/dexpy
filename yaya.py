@@ -14,13 +14,17 @@ from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 def timing() :  
   options = Options()
+  options.add_argument("--headless")
+  options.add_argument("--no-sandbox")
+  options.add_argument("--disable-dev-shm-usage")
+  options.add_argument("--disable-gpu")
+  service = Service('/usr/bin/geckodriver')
+  driver = webdriver.Firefox(service=service, options=options)
   options.headless = True
   path_geckodriver = '/usr/bin/geckodriver'
   service = Service('/usr/bin/geckodriver')
   options = webdriver.FirefoxOptions()
   driver = webdriver.Firefox(service=service, options=options)
-
-  
   service_path = Service(executable_path=path_geckodriver)
   driver = webdriver.Firefox(service=service_path, options=options)
   bot_ertebati = webdriver.Firefox(service=service_path)
