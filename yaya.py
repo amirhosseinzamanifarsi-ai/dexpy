@@ -17,6 +17,11 @@ def timing() :
   options = Options()
   options.headless = True
   path_geckodriver = '/usr/bin/geckodriver'
+  service = Service('/usr/bin/geckodriver')
+  options = webdriver.FirefoxOptions()
+  driver = webdriver.Firefox(service=service, options=options)
+
+  
   service_path = Service(executable_path=path_geckodriver)
   driver = webdriver.Firefox(service=service_path, options=options)
   bot_ertebati = webdriver.Firefox(service=service_path)
