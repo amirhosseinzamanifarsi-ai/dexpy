@@ -10,7 +10,13 @@ import pandas
 import yagmail
 import datetime
 import time
+from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
+
 def timing() :
+  options = Options()
+  options.headless = True
+  driver = webdriver.Firefox(service=service_path, options=options)
   path_geckodriver = '/usr/bin/geckodriver'
   service_path = Service(executable_path=path_geckodriver)
   bot_ertebati = webdriver.Firefox(service=service_path)
