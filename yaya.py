@@ -1,18 +1,18 @@
-def timing() :
-  from selenium.webdriver.firefox.service import Service
-  from selenium.webdriver.common.by import By
-  from selenium import webdriver
-  from bs4 import BeautifulSoup
-  from selenium.webdriver.support.ui import WebDriverWait
-  import requests
-  import schedule
-  import re
-  import pandas
-  import yagmail
-  import datetime
-  import time
-  from selenium import webdriver
-  from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.service import Service
+from selenium.webdriver.common.by import By
+from selenium import webdriver
+from bs4 import BeautifulSoup
+from selenium.webdriver.support.ui import WebDriverWait
+import requests
+import schedule
+import re
+import pandas
+import yagmail
+import datetime
+import time
+from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
+def timing() :  
   options = Options()
   options.headless = True
   path_geckodriver = '/usr/bin/geckodriver'
