@@ -26,8 +26,8 @@ def timing() :
   options = webdriver.FirefoxOptions()
   driver = webdriver.Firefox(service=service, options=options)
   service_path = Service(executable_path=path_geckodriver)
-  driver = webdriver.Firefox(service=service_path, options=options)
-  bot_ertebati = webdriver.Firefox(service=service_path)
+  #driver = webdriver.Firefox(service=service_path, options=options)
+  #bot_ertebati = webdriver.Firefox(service=service_path)
 
 
   ertebat = bot_ertebati.get('https://dexscreener.com/')
