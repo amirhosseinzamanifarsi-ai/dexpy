@@ -12,7 +12,7 @@ import datetime
 import time
 def timing() :
   path_geckodriver = '/usr/bin/geckodriver'
-  service_path = Service(path_geckodriver)
+  service_path = Service(executable_path=path_geckodriver)
   bot_ertebati = webdriver.Firefox(service=service_path)
 
 
