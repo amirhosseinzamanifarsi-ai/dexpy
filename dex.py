@@ -23,7 +23,7 @@ def timing() :
     ertebat = bot_ertebati.get('https://dexscreener.com/')
     wait = WebDriverWait(driver, 20)
     wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.ds-dex-table'))
-    wait = WebDriverWait(bot_ertebati , 10)
+    #wait = WebDriverWait(bot_ertebati , 10)
     data1 = bot_ertebati.find_element(By.CSS_SELECTOR , '.ds-dex-table')
     data_text = data1.text
     data_list = data_text.splitlines()
