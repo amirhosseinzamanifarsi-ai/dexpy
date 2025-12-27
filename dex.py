@@ -90,10 +90,10 @@ def timing() :
     yag = yagmail.SMTP(ersal_konandeh , password)
     yagyag = yag.send(daryaft_konandeh ,con,file_ersali)
     print ('file ba movafaghiat ersal shod.')
-   schedule.every().hour.do(timing)
-   while True :
-     schedule.run_pending()
-     time.sleep(1)
+    schedule.every().hour.do(timing)
+    while True :
+      schedule.run_pending()
+      time.sleep(1)
   
 
 
