@@ -91,9 +91,9 @@ def timing() :
     yagyag = yag.send(daryaft_konandeh ,con,file_ersali)
     print ('file ba movafaghiat ersal shod.')
 schedule.every(1).minute.do(timing)
-    while True :
-      schedule.run_pending()
-      time.sleep(1)
+while True :
+    schedule.run_pending()
+    time.sleep(1)
   
 
 
