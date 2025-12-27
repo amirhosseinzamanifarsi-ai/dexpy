@@ -11,9 +11,15 @@ import yagmail
 import datetime
 import time
 def timing() :
-  path_geckodriver = '/snap/bin/geckodriver'
+    options = Options()
+    options.add_argument("--headless")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--remote-debugging-port=9222")  # مفید برای تشخیص مشکل در صورت نیاز
+  path_geckodriver = '/usr/bin/geckodriver'
   service_path = Service(path_geckodriver)
-  bot_ertebati = webdriver.Firefox(service=service_path)
+  bot_ertebati = webdriver.Firefox(service=service_path,options=options)
 
 
   ertebat = bot_ertebati.get('https://dexscreener.com/')
