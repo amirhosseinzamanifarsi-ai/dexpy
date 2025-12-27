@@ -21,7 +21,7 @@ def timing() :
     service_path = Service(path_geckodriver)
     bot_ertebati = webdriver.Firefox(service=service_path,options=options)
     ertebat = bot_ertebati.get('https://dexscreener.com/')
-    wait = WebDriverWait(driver, 20)
+    wait = WebDriverWait(bot_ertebati, 20)
     wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.ds-dex-table'))
     #wait = WebDriverWait(bot_ertebati , 10)
     data1 = bot_ertebati.find_element(By.CSS_SELECTOR , '.ds-dex-table')
