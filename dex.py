@@ -18,6 +18,7 @@ def timing() :
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
+    options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64; rv:136.0) Gecko/20100101 Firefox/136.0")
     path_geckodriver = '/usr/bin/geckodriver'
     service_path = Service(path_geckodriver)
     bot_ertebati = webdriver.Firefox(service=service_path,options=options)
