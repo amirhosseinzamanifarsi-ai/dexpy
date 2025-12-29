@@ -52,12 +52,17 @@ def timing() :
     pd= pandas.DataFrame(arzha , columns= titles)
     ls_con=[]
     def token_add() :
-        path_geckodriver = '/snap/bin/geckodriver'
-        service_path = Service(path_geckodriver)
-        bot_ertebati = webdriver.Firefox(service=service_path)
+        options1 = Options()
+        options.add_argument("--headless")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64; rv:136.0) Gecko/20100101 Firefox/136.0")
+        path_geckodriver1 = '/usr/bin/geckodriver'
+        service_path1 = Service(path_geckodriver1)
+        bot_ertebati = webdriver.Firefox(service=service_path1,options=options1)
         bot_ertebati.get('https://dexscreener.com/')
-        bot_ertebati.implicitly_wait(20)
-    
+        bot_ertebati.implicitly_wait(20)   
         source_site = bot_ertebati.page_source
     
     
