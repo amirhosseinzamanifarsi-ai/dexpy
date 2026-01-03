@@ -29,84 +29,66 @@ def timing():
         
         # منتظر لود اولیه صفحه
         print("منتظر لود صفحه...")
-        time.sleep(10)  # انتظار بیشتر برای لود اولیه
+        time.sleep(20)  # انتظار بیشتر
         
         # اسکرول برای فعال کردن لود داده‌ها
         print("در حال اسکرول کردن صفحه...")
-        for i in range(5):
+        for i in range(15):  # اسکرول بیشتر
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             time.sleep(3)
         
-        # منتظر لود داده‌ها باشه (تا زمانی که ردیف‌های جدول ظاهر بشن)
-        print("منتظر لود داده‌ها...")
-        wait = WebDriverWait(driver, 60)
+        # اسکرول به بالا و پایین چند بار
+        for i in range(5):
+            driver.execute_script("window.scrollTo(0, 0);")
+            time.sleep(2)
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(5)
         
-        try:
-            # منتظر وجود حداقل یک ردیف جدول باشه
-            wait.until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, 'table tbody tr'))
-            )
-            print("✅ داده‌ها لود شدن!")
-        except:
-            print("❌ داده‌ها لود نشدن - امتحان روش‌های دیگه...")
-            
-            # امتحان روش‌های دیگه برای پیدا کردن جدول
-            selectors_to_try = [
-                'table.ds-dex-table',
-                'table.ds-table',
-                'table',
-                '.ds-dex-table',
-                '.ds-table',
-                'div table',
-                'table.dataTable',
-            ]
-            
-            table_found = False
-            for selector in selectors_to_try:
-                try:
-                    elements = driver.find_elements(By.CSS_SELECTOR, selector)
-                    if elements:
-                        print(f"✅ با سلکتور '{selector}' {len(elements)} عنصر پیدا شد")
-                        table_found = True
-                        break
-                except:
-                    pass
-            
-            if not table_found:
-                raise ValueError("هیچ جدولی پیدا نشد")
+        # چک کردن وجود داده‌ها در HTML
+        print("در حال بررسی وجود داده‌ها...")
+        page_source = driver.page_source
         
-        # استخراج داده‌ها
+        # چک کردن وجود کلمات کلیدی
+        keywords = ['ds-dex-table', 'ds-table', 'tbody', 'tr', 'td', 'rank', 'token', 'price']
+        found_keywords = []
+        
+        for keyword in keywords:
+            if keyword.lower() in page_source.lower():
+                found_keywords.append(keyword)
+        
+        print(f"✅ کلمات کلیدی پیدا شد: {found_keywords}")
+        
+        if len(found_keywords) < 3:
+            raise ValueError("داده‌ها لود نشدن - کلمات کلیدی کافی پیدا نشد")
+        
+        # استخراج داده‌ها از متن صفحه
         print("در حال استخراج داده‌ها...")
         
-        # پیدا کردن جدول
         try:
-            table = driver.find_element(By.TAG_NAME, "table")
-            tbody = table.find_element(By.TAG_NAME, "tbody")
-            rows = tbody.find_elements(By.TAG_NAME, "tr")
+            # پیدا کردن تمام متن صفحه
+            body_text = driver.find_element(By.TAG_NAME, "body").text
+            lines = body_text.split('\n')
             
-            if len(rows) < 5:  # حداقل 5 ردیف داده
-                raise ValueError(f"داده کافی یافت نشد ({len(rows)} ردیف)")
+            # فیلتر خطوطی که داده هستن
+            data_lines = []
+            for line in lines:
+                line = line.strip()
+                if line and len(line) > 3:  # خطوط خالی یا کوتاه رو حذف کن
+                    data_lines.append(line)
             
-            print(f"✅ {len(rows)} ردیف داده پیدا شد")
+            if len(data_lines) < 30:  # حداقل 30 خط داده
+                raise ValueError(f"داده کافی یافت نشد ({len(data_lines)} خط)")
             
-            # نمایش چند ردیف اول برای بررسی
-            for i, row in enumerate(rows[:3]):
-                cells = row.find_elements(By.TAG_NAME, "td")
-                if cells:
-                    row_data = [cell.text for cell in cells]
-                    print(f"ردیف {i+1}: {row_data}")
+            print(f"✅ {len(data_lines)} خط داده پیدا شد")
             
-            # استخراج داده‌ها
-            data_list = []
-            for row in rows:
-                cells = row.find_elements(By.TAG_NAME, "td")
-                row_data = [cell.text for cell in cells]
-                if row_data:  # فقط ردیف‌هایی که داده دارن
-                    data_list.extend(row_data)
+            # نمایش چند خط اول برای بررسی
+            print("چند خط اول داده:")
+            for i, line in enumerate(data_lines[:10]):
+                print(f"  {i+1}: {line}")
             
-            # ادامه کد مثل قبل...
+            # پردازش داده‌ها
             titles = ['RANK','TOKEN', 'EXCHANGE', 'FULL NAME', 'PRICE', 'AGE', 'TXNS', 'VOLUME', 'MAKERS', '5M', '1H', '6H', '24H', 'LIQUIDITY', 'MCAP']
-            new_data = data_list
+            new_data = data_lines
             
             # حذف آیتم‌های ناخواسته
             dl_list = ['750','3','210','880','780','150','WP','720','V4','20','50','70','60','CPMM','180','620','80','100V3','V3','200','V1','30','OOPS','100','550','130','CLMM','DLMM','40','600','300','V2','500','110','DYN','DYN2','/','1000','10','310','850','120','660','510','530']
