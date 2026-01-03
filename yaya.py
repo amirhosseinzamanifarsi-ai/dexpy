@@ -1,171 +1,176 @@
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.service import Service
+from selenium.webdriver.common.by import By
+from selenium import webdriver
+from bs4 import BeautifulSoup
+from selenium.webdriver.support.ui import WebDriverWait
+import requests
+import schedule
+import re
+import pandas as pd
+import yagmail
+import datetime
+import time
+import os
+
 def timing():
-    # تنظیمات Firefox برای لینوکس
+    print("Starting timing function...")
+    
+    # تنظیمات Firefox برای سرور لینوکس
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
-    options.add_argument("--window-size=1920,1080")
-    options.add_argument("--disable-web-security")
-    options.add_argument("--allow-running-insecure-content")
-    options.add_argument("--disable-extensions")
-    options.add_argument("--disable-infobars")
-    options.add_argument("--disable-logging")
-    options.add_argument("--log-level=3")
-    options.add_argument("--silent")
+    options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64; rv:136.0) Gecko/20100101 Firefox/136.0")
+    options.add_argument("--window-size=1280,720")
     
-    # User-Agent مخصوص Firefox روی لینوکس
-    user_agent = "Mozilla/5.0 (X11; Linux x86_64; rv:136.0) Gecko/20100101 Firefox/136.0"
-    options.add_argument(f"--user-agent={user_agent}")
+    # استفاده از geckodriver به صورت خودکار (اگر نصب نیست، این خط رو حذف کن)
+    try:
+        from webdriver_manager.firefox import GeckoDriverManager
+        service = Service(GeckoDriverManager().install())
+    except:
+        # اگر webdriver-manager نصب نیست، از مسیر دستی استفاده کن
+        service = Service('/usr/bin/geckodriver')
     
-    service_path = Service('/usr/bin/geckodriver')
-    driver = None
+    driver = webdriver.Firefox(service=service, options=options)
     
     try:
-        driver = webdriver.Firefox(service=service_path, options=options)
-        print("در حال باز کردن صفحه...")
-        
         driver.get('https://dexscreener.com/')
+        print("Page loaded")
         
-        # منتظر لود اولیه صفحه
-        print("منتظر لود صفحه...")
-        time.sleep(10)  # انتظار بیشتر برای لود اولیه
+        # صبر کنید تا صفحه کاملاً لود شود
+        WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+        time.sleep(5)  # زمان اضافی برای لود کامل
         
-        # اسکرول برای فعال کردن لود داده‌ها
-        print("در حال اسکرول کردن صفحه...")
-        for i in range(5):
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(3)
+        # بررسی محتوای صفحه
+        page_source = driver.page_source
+        print(f"Page source length: {len(page_source)}")
         
-        # منتظر لود داده‌ها باشه (تا زمانی که ردیف‌های جدول ظاهر بشن)
-        print("منتظر لود داده‌ها...")
-        wait = WebDriverWait(driver, 60)
-        
+        # روش 1: استفاده از المنت‌های قابل اعتماد
+        # ابتدا چک کنید که جدول وجود دارد
         try:
-            # منتظر وجود حداقل یک ردیف جدول باشه
-            wait.until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, 'table tbody tr'))
-            )
-            print("✅ داده‌ها لود شدن!")
-        except:
-            print("❌ داده‌ها لود نشدن - امتحان روش‌های دیگه...")
-            
-            # امتحان روش‌های دیگه برای پیدا کردن جدول
-            selectors_to_try = [
-                'table.ds-dex-table',
-                'table.ds-table',
-                'table',
-                '.ds-dex-table',
-                '.ds-table',
-                'div table',
-                'table.dataTable',
-            ]
-            
-            table_found = False
-            for selector in selectors_to_try:
-                try:
-                    elements = driver.find_elements(By.CSS_SELECTOR, selector)
-                    if elements:
-                        print(f"✅ با سلکتور '{selector}' {len(elements)} عنصر پیدا شد")
-                        table_found = True
-                        break
-                except:
-                    pass
-            
-            if not table_found:
-                raise ValueError("هیچ جدولی پیدا نشد")
-        
-        # استخراج داده‌ها
-        print("در حال استخراج داده‌ها...")
-        
-        # پیدا کردن جدول
-        try:
-            table = driver.find_element(By.TAG_NAME, "table")
-            tbody = table.find_element(By.TAG_NAME, "tbody")
-            rows = tbody.find_elements(By.TAG_NAME, "tr")
-            
-            if len(rows) < 5:  # حداقل 5 ردیف داده
-                raise ValueError(f"داده کافی یافت نشد ({len(rows)} ردیف)")
-            
-            print(f"✅ {len(rows)} ردیف داده پیدا شد")
-            
-            # نمایش چند ردیف اول برای بررسی
-            for i, row in enumerate(rows[:3]):
-                cells = row.find_elements(By.TAG_NAME, "td")
-                if cells:
-                    row_data = [cell.text for cell in cells]
-                    print(f"ردیف {i+1}: {row_data}")
-            
-            # استخراج داده‌ها
-            data_list = []
-            for row in rows:
-                cells = row.find_elements(By.TAG_NAME, "td")
-                row_data = [cell.text for cell in cells]
-                if row_data:  # فقط ردیف‌هایی که داده دارن
-                    data_list.extend(row_data)
-            
-            # ادامه کد مثل قبل...
-            titles = ['RANK','TOKEN', 'EXCHANGE', 'FULL NAME', 'PRICE', 'AGE', 'TXNS', 'VOLUME', 'MAKERS', '5M', '1H', '6H', '24H', 'LIQUIDITY', 'MCAP']
-            new_data = data_list
-            
-            # حذف آیتم‌های ناخواسته
-            dl_list = ['750','3','210','880','780','150','WP','720','V4','20','50','70','60','CPMM','180','620','80','100V3','V3','200','V1','30','OOPS','100','550','130','CLMM','DLMM','40','600','300','V2','500','110','DYN','DYN2','/','1000','10','310','850','120','660','510','530']
-            
-            nd = []
-            for item in new_data:
-                if item not in dl_list:
-                    nd.append(item)
-            
-            # ایجاد دیتافریم
-            arzha = []
-            for i in range(0, len(nd), 15):
-                arz = nd[i:i+15]
-                if len(arz) == 15:  # مطمئن شو که 15 ستون داره
-                    arzha.append(arz)
-            
-            if len(arzha) == 0:
-                raise ValueError("هیچ ردیف داده‌ای پیدا نشد")
-                
-            pd = pandas.DataFrame(arzha, columns=titles)
-            
-            # استخراج آدرس قراردادها
-            ls_con = token_add(driver)
-            
-            # اضافه کردن آدرس قرارداد
-            if len(pd) == len(ls_con):
-                pd['CONTRACT ADDRESS'] = ls_con
+            # سعی کنید المنت‌های مختلف را پیدا کنید
+            elements = driver.find_elements(By.TAG_NAME, "table")
+            if elements:
+                print(f"Found {len(elements)} table elements")
+                # اولین جدول را انتخاب کنید
+                table = elements[0]
+                table_html = table.get_attribute('outerHTML')
+                soup = BeautifulSoup(table_html, 'html.parser')
+                rows = soup.find_all('tr')
+                print(f"Found {len(rows)} rows in table")
             else:
-                print(f"هشدار: تعداد ردیف‌ها ({len(pd)}) با تعداد آدرس‌ها ({len(ls_con)}) متفاوت است")
-                pd['CONTRACT ADDRESS'] = ls_con[:len(pd)]  # فقط به اندازه تعداد ردیف‌ها
-            
-            # ذخیره CSV
-            csvname = f'dexscrrener.csv'
-            pd.to_csv(csvname, index=False, encoding='utf-8')
-            print(f"فایل {csvname} ذخیره شد")
-            
-            # ارسال ایمیل
-            send_email(csvname)
-            print('فایل با موفقیت ارسال شد.')
-            
+                print("No table found, trying div with specific classes")
+                # روش جایگزین: یافتن المنت‌های دیگر
+                divs = driver.find_elements(By.CSS_SELECTOR, "div.ds-dex-table-row")
+                print(f"Found {len(divs)} div rows")
         except Exception as e:
-            print(f"❌ خطا در استخراج داده‌ها: {e}")
-            raise
+            print(f"Error finding elements: {e}")
+        
+        # روش 2: استخراج داده‌ها از صفحه با BeautifulSoup
+        soup = BeautifulSoup(page_source, 'html.parser')
+        
+        # یافتن المنت‌های مختلف
+        data_list = []
+        
+        # روش اول: یافتن المنت‌هایی که شامل اطلاعات توکن هستند
+        token_elements = soup.find_all('div', class_=re.compile('ds-dex-table-row'))
+        
+        if not token_elements:
+            # روش دوم: یافتن المنت‌های عمومی
+            token_elements = soup.find_all('div', {'data-testid': re.compile('token')})
+        
+        if not token_elements:
+            # روش سوم: یافتن همه div‌هایی که شامل اطلاعات قیمت هستند
+            price_elements = soup.find_all(text=re.compile(r'\$'))
+            print(f"Found {len(price_elements)} price elements")
+            for price in price_elements[:10]:  # فقط 10 مورد اول
+                parent = price.parent
+                while parent:
+                    if parent.name == 'div' and len(parent.get_text()) > 20:
+                        data_list.append(parent.get_text().strip())
+                        break
+                    parent = parent.parent
+        
+        # اگر روش‌های بالا جواب نداد، از متن صفحه استخراج کن
+        if not data_list:
+            # یافتن خطوطی که شامل اطلاعات مالی هستند
+            lines = page_source.split('\n')
+            financial_lines = []
+            for line in lines:
+                if '$' in line and ('%' in line or 'ETH' in line or 'SOL' in line):
+                    financial_lines.append(line.strip())
+            
+            data_list = financial_lines[:50]  # فقط 50 خط اول
+        
+        # ساخت DataFrame
+        if data_list:
+            # تقسیم داده‌ها به ردیف‌ها
+            rows_data = []
+            for line in data_list:
+                # تمیز کردن داده‌ها
+                cleaned_line = re.sub(r'\s+', ' ', line)
+                rows_data.append([cleaned_line])
+            
+            df = pd.DataFrame(rows_data, columns=['Raw Data'])
+            print(f"Created DataFrame with {len(df)} rows")
+        else:
+            # اگر هیچ داده‌ای پیدا نشد، یک DataFrame خالی ایجاد کن
+            df = pd.DataFrame({'Message': ['No data found']})
+            print("No data extracted")
+        
+        # ذخیره به CSV
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        csvname = f'dexscrrener_{timestamp}.csv'
+        df.to_csv(csvname, index=False, encoding='utf-8')
+        print(f"CSV saved as {csvname}")
+        
+        # ارسال ایمیل
+        try:
+            send_email(csvname)
+        except Exception as e:
+            print(f"Email sending failed: {e}")
             
     except Exception as e:
-        print(f"❌ خطای کلی: {e}")
-        
-        # ذخیره اسکرین‌شات و HTML برای دیباگ
-        if driver:
-            try:
-                driver.save_screenshot('debug_screenshot.png')
-                with open('debug_page.html', 'w', encoding='utf-8') as f:
-                    f.write(driver.page_source)
-                print("✅ اسکرین‌شات و HTML صفحه برای دیباگ ذخیره شد")
-            except:
-                pass
-        
-        raise
+        print(f"Error in timing function: {e}")
+        # ذخیره page_source برای دیباگ
+        try:
+            with open('debug_page_source.html', 'w', encoding='utf-8') as f:
+                f.write(driver.page_source)
+            print("Page source saved to debug_page_source.html")
+        except:
+            pass
     
     finally:
-        if driver:
-            driver.quit()
+        driver.quit()
+
+def send_email(csv_file):
+    """ارسال ایمیل با فایل پیوست"""
+    try:
+        ersal_konandeh = 'dexscreeneramirzamani@gmail.com'
+        password = 'urcs rehx ttyt hzbv'
+        daryaft_konandeh = 'amirhosseinzamanifarsi@gmail.com'
+        subject = f'DexScreener Data - {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+        
+        yag = yagmail.SMTP(ersal_konandeh, password)
+        yag.send(
+            to=daryaft_konandeh,
+            subject=subject,
+            contents=f'Attached is the DexScreener data file: {csv_file}',
+            attachments=csv_file
+        )
+        print('Email sent successfully')
+    except Exception as e:
+        print(f'Email sending failed: {e}')
+
+# برنامه‌ریزی اجرا
+schedule.every(1).minutes.do(timing)
+
+if __name__ == "__main__":
+    print("Starting DexScreener scraper...")
+    timing()  # اجرای اولیه برای تست
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
