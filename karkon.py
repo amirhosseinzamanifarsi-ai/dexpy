@@ -29,6 +29,7 @@ def timing():
     bot_ertebati.get('https://dexscreener.com/')
     time.sleep(random.uniform(3, 7))
     time.sleep(2)
+    bot_ertebati.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     # افزایش زمان انتظار
     wait = WebDriverWait(bot_ertebati, 30)
     wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.ds-dex-table')))
