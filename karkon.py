@@ -12,7 +12,7 @@ import pandas
 import yagmail
 import datetime
 import time
-
+import random
 def timing():
     options = Options()
     options.add_argument("--headless")
