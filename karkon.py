@@ -28,7 +28,6 @@ def timing():
     # افزایش تأخیر اولیه
     bot_ertebati.get('https://dexscreener.com/')
     time.sleep(random.uniform(3, 7))
-    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     time.sleep(2)
     # افزایش زمان انتظار
     wait = WebDriverWait(bot_ertebati, 30)
