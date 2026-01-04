@@ -15,6 +15,18 @@ import yagmail
 import re
 import signal
 import sys
+import subprocess
+
+def is_tor_running():
+    try:
+        result = subprocess.run(["pgrep", "tor"], capture_output=True, text=True)
+        return len(result.stdout.strip()) > 0
+    except:
+        return False
+
+if not is_tor_running():
+    print("❌ Tor روشن نیست. لطفاً اجرا کنید: sudo systemctl start tor")
+    exit(1)
 
 # -----------------------------
 # تنظیمات سیستمی
