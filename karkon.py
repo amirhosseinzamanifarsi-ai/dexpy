@@ -229,4 +229,17 @@ def signal_handler(sig, frame):
     log("دریافت Ctrl+C. سیستم خاموش می‌شود...")
     sys.exit(0)
 
-signal.signal(signal
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
+
+# -----------------------------
+# برنامه‌ریزی
+# -----------------------------
+schedule.every(2).minutes.do(extract_data)  # هر 2 دقیقه یک بار
+
+log("=== شروع برنامه ===")
+log("هر 2 دقیقه یک بار اجرا می‌شود...")
+
+while True:
+    schedule.run_pending()
+    time.sleep(30)  # اینجا مهم: 30 ثانیه صبر کن تا جلوی اجرا دوباره بگیری
