@@ -22,8 +22,22 @@ def timing() :
     path_geckodriver = '/usr/bin/geckodriver'
     service_path = Service(path_geckodriver)
     bot_ertebati = webdriver.Firefox(service=service_path,options=options)
+    
+    # افزایش تأخیر اولیه برای بارگذاری صفحه
     ertebat = bot_ertebati.get('https://dexscreener.com/')
-    time.sleep(8)
+    time.sleep(15)  # افزایش به 15 ثانیه
+    
+    # افزایش زمان انتظار برای پیدا کردن المنت
+    wait = WebDriverWait(bot_ertebati, 30)  # افزایش به 30 ثانیه
+    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.ds-dex-table')))
+    
+    # کمی استراحت بیشتر قبل از خواندن داده
+    time.sleep(5)
+    
+    wait = WebDriverWait(bot_ertebati , 15)  # افزایش کمی
+    data1 = bot_ertebati.find_element(By.CSS_SELECTOR , '.ds-dex-table')
+    data_text = data1.text
+    # ... بقیه کد بدون تغییر
     wait = WebDriverWait(bot_ertebati, 20)
     wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.ds-dex-table')))
     wait = WebDriverWait(bot_ertebati , 10)
