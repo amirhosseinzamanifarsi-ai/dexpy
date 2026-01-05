@@ -32,7 +32,7 @@ if not is_tor_running():
 # تنظیمات سیستمی
 # -----------------------------
 TOR_SERVICE = "tor"  # نام سرویس Tor در سیستم
-GECKODRIVER_PATH = "/usr/bin/geckodriver"
+GECKODRIVER_PATH = "/usr/local/bin/geckodriver"
 LOG_FILE = "dexscreener.log"
 
 # -----------------------------
