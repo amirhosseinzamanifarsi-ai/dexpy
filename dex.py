@@ -29,7 +29,7 @@ def timing() :
     
     # افزایش زمان انتظار برای پیدا کردن المنت
     wait = WebDriverWait(bot_ertebati, 30)  # افزایش به 30 ثانیه
-    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.ds-dex-table')))
+    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.ds-dex-table.ds-dex-table.ds-dex-table.ds-dex-table')))
     
     # کمی استراحت بیشتر قبل از خواندن داده
     time.sleep(5)
@@ -39,7 +39,7 @@ def timing() :
     data_text = data1.text
     # ... بقیه کد بدون تغییر
     wait = WebDriverWait(bot_ertebati, 20)
-    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.ds-dex-table')))
+    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'html body.chakra-ui-dark div#root div.notranslate.custom-cwirlr main.custom-1ip3p22 div.custom-lemrak div.ds-dex-table.ds-dex-table-top')))
     wait = WebDriverWait(bot_ertebati , 10)
     data1 = bot_ertebati.find_element(By.CSS_SELECTOR , '.ds-dex-table')
     data_text = data1.text
