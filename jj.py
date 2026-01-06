@@ -1,1 +1,4 @@
-print ('gdgdgdgdggd')
+def jj() :
+
+  print ('gdgdgdgdggd')
+jj()
