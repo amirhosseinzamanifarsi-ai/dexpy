@@ -22,7 +22,7 @@ def timing():
     options.add_argument("--remote-debugging-port=9222")  # مفید برای تشخیص مشکل در صورت نیاز
     
     # مسیر geckodriver (معمولاً در PATH باشه یا مسیر کامل مشخص بشه)
-    service = Service('/usr/local/bin/geckodriver')  # یا مسیر دیگه‌ای که geckodriver روی سرور نصب شده
+    service = Service('/snap/local/bin/geckodriver')  # یا مسیر دیگه‌ای که geckodriver روی سرور نصب شده
     
     # ایجاد درایور با تنظیمات بالا
     driver = webdriver.Firefox(service=service, options=options)
