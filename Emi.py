@@ -31,8 +31,7 @@ def timing():
         
         # انتظار برای VISIBILITY جدول (فیکس اصلی)
         table_element = WebDriverWait(driver, 45).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, ".ds-dex-table"))
-        )
+            EC.visibility_of_element_located((By.CSS_SELECTOR, ".ds-dex-table")))
 
         # بقیه کد بدون تغییر >>>>>>>>>>>>
         source_site = driver.page_source
