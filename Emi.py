@@ -14,8 +14,8 @@ import time
 from selenium.webdriver.firefox.options import Options
 
 def timing():
-    options.add_argument("--headless=new")  # ✅ حالت هدلس جدید
-    options.add_argument("-profile /tmp/ffprofile")  # ✅ پروفایل اختصاصی
+    options.add_argument("--headless=new")
+    options.add_argument("-profile /tmp/ffprofile")  # ✅ پروفایل اختصای
     options.set_preference("marionette.port", 2828)  # ✅ تعیین پورت ثابت
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")  # ✅ فیکس سرور لینوکس
