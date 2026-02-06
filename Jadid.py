@@ -19,7 +19,7 @@ def timing():
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
-    options.add_argument("--remote-debugging-port=9222")  # مفید برای تشخیص مشکل در صورت نیاز
+    #options.add_argument("--remote-debugging-port=9222")  # مفید برای تشخیص مشکل در صورت نیاز
     
     # مسیر geckodriver (معمولاً در PATH باشه یا مسیر کامل مشخص بشه)
     service = Service('/usr/local/bin/geckodriver')  # یا مسیر دیگه‌ای که geckodriver روی سرور نصب شده
