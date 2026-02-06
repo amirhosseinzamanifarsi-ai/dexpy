@@ -9,33 +9,34 @@ import schedule
 import re
 import pandas as pd
 import yagmail
-import datetime
 import time
 from selenium.webdriver.firefox.options import Options
+import os  # ░▒▓ حیاتی برای محیط سرور ▓▒░
 
 def timing():
-    # تنظیمات هدلس با فیکس‌های سروری
+    # ░▒▓ تنظیمات تضمینی برای سرور لینوکس ▓▒░
+    os.environ['PATH'] = '/usr/local/bin:' + os.environ['PATH']  # حل مشکل PATH
+    
     options = Options()
-    options.add_argument("--headless=new")  # ✅ حالت هدلس جدید
-    options.add_argument("-profile /tmp/ffprofile")  # ✅ پروفایل اختصاصی
-    options.set_preference("marionette.port", 2828)  # ✅ تعیین پورت ثابت
-    options.add_argument("--headless")
-    options.add_argument("--no-sandbox")  # ✅ فیکس سرور لینوکس
-    options.add_argument("--disable-dev-shm-usage")  # ✅ فیکس حافظه
+    options.binary_location = '/usr/bin/firefox'  # مسیر دقیق فایرفاکس
+    options.add_argument("--headless=new")
+    options.add_argument("--no-sandbox")  # ضروری برای داکر/سرور
+    options.add_argument("--disable-dev-shm-usage")  # حل مشکل حافظه
     options.add_argument("--window-size=1920,1080")
-    service = Service('usr/local/bin/geckodriver')  # ✅ مسیر اصلاح شده
+    
+    service = Service(executable_path='/usr/local/bin/geckodriver')  # مسیر مطلق
     
     driver = webdriver.Firefox(service=service, options=options)
 
     try:
         driver.get('https://dexscreener.com/')
         
-        # انتظار برای VISIBILITY جدول (فیکس اصلی)
-        table_element = WebDriverWait(driver, 45).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, ".ds-dex-table"))
+        # ░▒▓ انتظار هوشمندانه با انتخابگر اصلاح شده ▓▒░
+        table_element = WebDriverWait(driver, 25).until(
+            EC.visibility_of_element_located((By.CSS_SELECTOR, "div[class*='ds-dex-table']"))
         )
 
-        # بقیه کد بدون تغییر >>>>>>>>>>>>
+        # ░▒▓ بخش استخراج داده (بدون تغییر) ▓▒░
         source_site = driver.page_source
         soup = BeautifulSoup(source_site, 'html.parser')
         z = requests.get('https://dexscreener.com/')
@@ -68,37 +69,35 @@ def timing():
 
         pd_df = pd.DataFrame(arzha, columns=titles)
 
+        # ░▒▓ منطق تطابق آدرس‌ها ▓▒░
         if len(pd_df) == len(ls_con):
             pd_df['CONTRACT ADDRESS'] = ls_con
         else:
-            if len(ls_con) < len(pd_df):
-                ls_con_extended = (ls_con * ((len(pd_df) // len(ls_con)) + 1))[:len(pd_df)]
-            else:
-                ls_con_extended = ls_con[:len(pd_df)]
+            ls_con_extended = ls_con[:len(pd_df)] if len(ls_con) > len(pd_df) else ls_con + ['N/A']*(len(pd_df)-len(ls_con))
             pd_df['CONTRACT ADDRESS'] = ls_con_extended
 
-        csvname = f'dexscrrener.csv'
+        csvname = 'dexscrrener.csv'
         pd_df.to_csv(csvname, index=False, encoding='utf-8')
         print(f"CSV generated: {csvname}")
 
+        # ░▒▓ ارسال ایمیل ▓▒░
         ersal_konandeh = 'dexscreeneramirzamani@gmail.com'
         password = 'urcs rehx ttyt hzbv'
         file_ersali = csvname
-        con = 'test'
+        con = 'گزارش لحظه‌ای DexScreener'
         daryaft_konandeh = 'amirhosseinzamanifarsi@gmail.com'
         
         yag = yagmail.SMTP(ersal_konandeh, password)
         yag.send(daryaft_konandeh, con, file_ersali)
-        print('file ba movafaghiat ersal shod.')
-        # پایان بخش بدون تغییر <<<<<<<<<<
-
+        print('فایل با موفقیت ارسال شد.')
+        
     except Exception as e:
-        print(f"Error: {e}")
-        driver.save_screenshot('error.png')
+        print(f"🚨 خطا: {str(e)}")
+        driver.save_screenshot('/root/dexpy/error.png')  # ذخیره تصویر خطا در مسیر مشخص
     finally:
         driver.quit()
 
-# زمان‌بندی بدون تغییر
+# ░▒▓ زمان‌بندی اجرا ▓▒░
 schedule.every(1).minute.do(timing)
 
 while True:
