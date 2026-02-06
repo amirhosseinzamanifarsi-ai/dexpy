@@ -23,7 +23,7 @@ def timing():
     options.add_argument("--no-sandbox")  # ✅ فیکس سرور لینوکس
     options.add_argument("--disable-dev-shm-usage")  # ✅ فیکس حافظه
     options.add_argument("--window-size=1920,1080")
-    service = Service('snap/bin/geckodriver')  # ✅ مسیر اصلاح شده
+    service = Service('usr/local/bin/geckodriver')  # ✅ مسیر اصلاح شده
     
     driver = webdriver.Firefox(service=service, options=options)
 
