@@ -16,6 +16,9 @@ from selenium.webdriver.firefox.options import Options
 def timing():
     # تنظیمات هدلس با فیکس‌های سروری
     options = Options()
+    options.add_argument("--headless=new")  # ✅ حالت هدلس جدید
+    options.add_argument("-profile /tmp/ffprofile")  # ✅ پروفایل اختصاصی
+    options.set_preference("marionette.port", 2828)  # ✅ تعیین پورت ثابت
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")  # ✅ فیکس سرور لینوکس
     options.add_argument("--disable-dev-shm-usage")  # ✅ فیکس حافظه
