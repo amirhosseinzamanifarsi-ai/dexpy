@@ -14,13 +14,13 @@ import time
 from selenium.webdriver.firefox.options import Options
 
 def timing():
-    options.add_argument("--headless=new")
-    options.add_argument("-profile /tmp/ffprofile")  # ✅ پروفایل اختصای
-    options.set_preference("marionette.port", 2828)  # ✅ تعیین پورت ثابت
-    options.add_argument("--headless")
-    options.add_argument("--no-sandbox")  # ✅ فیکس سرور لینوکس
-    options.add_argument("--disable-dev-shm-usage")  # ✅ فیکس حافظه
-    options.add_argument("--window-size=1920,1080")
+    Options.add_argument("--headless=new")
+    Options.add_argument("-profile /tmp/ffprofile")  # ✅ پروفایل اختصای
+    Options.set_preference("marionette.port", 2828)  # ✅ تعیین پورت ثابت
+    Options.add_argument("--headless")
+    Options.add_argument("--no-sandbox")  # ✅ فیکس سرور لینوکس
+    Options.add_argument("--disable-dev-shm-usage")  # ✅ فیکس حافظه
+    Options.add_argument("--window-size=1920,1080")
     service = Service('usr/local/bin/geckodriver')  # ✅ مسیر اصلاح شده
     
     driver = webdriver.Firefox(service=service, options=options)
