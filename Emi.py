@@ -14,23 +14,25 @@ import time
 from selenium.webdriver.firefox.options import Options
 
 def timing():
-    # تنظیمات هدلس (تنها تغییرات ضروری)
+    # تنظیمات هدلس با فیکس‌های سروری
     options = Options()
     options.add_argument("--headless")
-    options.add_argument("--window-size=1920,1080")  # ✅ ضروری برای نمایش عناصر
-    service = Service('/snap/bin/geckodriver')
+    options.add_argument("--no-sandbox")  # ✅ فیکس سرور لینوکس
+    options.add_argument("--disable-dev-shm-usage")  # ✅ فیکس حافظه
+    options.add_argument("--window-size=1920,1080")
+    service = Service('/usr/local/bin/geckodriver')  # ✅ مسیر اصلاح شده
     
     driver = webdriver.Firefox(service=service, options=options)
 
     try:
         driver.get('https://dexscreener.com/')
         
-        # فقط اضافه کردن انتظار برای جدول (تنها تغییر در منطق)
-        WebDriverWait(driver, 25).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, ".ds-dex-table"))
+        # انتظار برای VISIBILITY جدول (فیکس اصلی)
+        table_element = WebDriverWait(driver, 45).until(
+            EC.visibility_of_element_located((By.CSS_SELECTOR, ".ds-dex-table"))
         )
 
-        # بقیه کد شما بدون هیچ تغییری >>>>>>>>>>>>
+        # بقیه کد بدون تغییر >>>>>>>>>>>>
         source_site = driver.page_source
         soup = BeautifulSoup(source_site, 'html.parser')
         z = requests.get('https://dexscreener.com/')
@@ -89,11 +91,11 @@ def timing():
 
     except Exception as e:
         print(f"Error: {e}")
-        driver.save_screenshot('error.png')  # اضافه شدن اسکرین‌شات فقط برای خطاها
+        driver.save_screenshot('error.png')
     finally:
         driver.quit()
 
-# بخش زمان‌بندی بدون تغییر
+# زمان‌بندی بدون تغییر
 schedule.every(1).minute.do(timing)
 
 while True:
