@@ -1,8 +1,12 @@
-Scheduler started...
-Starting task at 2026-02-07 08:04:03
-Error in timing(): Message: Failed to read marionette port
+sudo apt-get update
+sudo apt-get install -y wget curl unzip libglib2.0-0 libnss3 libgconf-2-4 libfontconfig1 libatk1.0-0 libatk-bridge2.0-0 libpangocairo-1.0-0 libgtk-3-0 libx11-xcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 x11-apps xauth xvfb
 
-Starting task at 2026-02-07 08:07:14
-Error in timing(): Message: Failed to read marionette port
+
+
+
+
+
+
+
 
 
