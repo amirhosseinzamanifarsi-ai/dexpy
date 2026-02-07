@@ -1,14 +1,26 @@
-sudo apt-get update
-sudo apt-get install -y wget curl unzip libglib2.0-0 libnss3 libgconf-2-4 libfontconfig1 libatk1.0-0 libatk-bridge2.0-0 libpangocairo-1.0-0 libgtk-3-0 libx11-xcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 x11-apps xauth xvfb
+
+--- شروع تسک: 2026-02-07 10:06:07 ---
+❌ خطای غیرمنتظره: Message: 
+Stacktrace:
+#0 0x596268c33a4a <unknown>
+#1 0x59626864c6a2 <unknown>
+#2 0x5962686a1a8d <unknown>
+#3 0x5962686a1cd1 <unknown>
+#4 0x5962686ed5c4 <unknown>
+#5 0x5962686ea7f0 <unknown>
+#6 0x5962686938b2 <unknown>
+#7 0x5962686946a1 <unknown>
+#8 0x596268bf98a9 <unknown>
+#9 0x596268bfc7b1 <unknown>
+#10 0x596268be5ea9 <unknown>
+#11 0x596268bfd36e <unknown>
+#12 0x596268bcc410 <unknown>
+#13 0x596268c210c8 <unknown>
+#14 0x596268c2129b <unknown>
+#15 0x596268c32db8 <unknown>
+#16 0x702a8229caa4 <unknown>
+#17 0x702a82329c6c <unknown>
+
+--- پایان عملیات و پاکسازی حافظه ---
 
 
-
-
-
-
-
-
-
-
-wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-sudo apt install ./google-chrome-stable_current_amd64.deb
