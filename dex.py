@@ -1,127 +1,129 @@
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.firefox.service import Service
-from selenium.webdriver.common.by import By
-from selenium import webdriver
-from bs4 import BeautifulSoup
-from selenium.webdriver.support.ui import WebDriverWait
-import requests
-import schedule
-import re
-import pandas
+from DrissionPage import ChromiumPage, ChromiumOptions
+from pyvirtualdisplay import Display
+import pandas as pd
 import yagmail
-import datetime
+import schedule
 import time
-def timing() :
-    options = Options()
-    options.add_argument("--headless")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64; rv:136.0) Gecko/20100101 Firefox/136.0")
-    path_geckodriver = '/snap/bin/geckodriver'
-    service_path = Service(path_geckodriver)
-    bot_ertebati = webdriver.Firefox(service=service_path,options=options)
+import re
+import os
+
+def timing():
+    print(f"\n--- شروع تسک جدید: {time.strftime('%H:%M:%S')} ---")
     
-    # افزایش تأخیر اولیه برای بارگذاری صفحه
-    ertebat = bot_ertebati.get('https://dexscreener.com/')
-    time.sleep(15)  # افزایش به 15 ثانیه
+    # ۱. راه‌اندازی نمایشگر مجازی (برای اینکه مرورگر فکر کند مانیتور دارد)
+    display = Display(visible=0, size=(1920, 1080))
+    display.start()
     
-    # افزایش زمان انتظار برای پیدا کردن المنت
-    wait = WebDriverWait(bot_ertebati, 30)  # افزایش به 30 ثانیه
-    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.ds-dex-table.ds-dex-table.ds-dex-table.ds-dex-table')))
-    
-    # کمی استراحت بیشتر قبل از خواندن داده
-    time.sleep(5)
-    
-    wait = WebDriverWait(bot_ertebati , 15)  # افزایش کمی
-    data1 = bot_ertebati.find_element(By.CSS_SELECTOR , '.ds-dex-table')
-    data_text = data1.text
-    # ... بقیه کد بدون تغییر
-    wait = WebDriverWait(bot_ertebati, 20)
-    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'html body.chakra-ui-dark div#root div.notranslate.custom-cwirlr main.custom-1ip3p22 div.custom-lemrak div.ds-dex-table.ds-dex-table-top')))
-    wait = WebDriverWait(bot_ertebati , 10)
-    data1 = bot_ertebati.find_element(By.CSS_SELECTOR , '.ds-dex-table')
-    data_text = data1.text
-    data_list = data_text.splitlines()
-    titles = ['RANK','TOKEN',  'EXCHANGE' ,' FULL NAME', 'PRICE', 'AGE', 'TXNS', 'VOLUME', 'MAKERS', '5M', '1H', '6H', '24H', 'LIQUIDITY', 'MCAP']
+    page = None
+    try:
+        # تنظیمات مرورگر برای مخفی ماندن کامل
+        co = ChromiumOptions()
+        co.set_argument('--no-sandbox')
+        co.set_argument('--disable-dev-shm-usage')
+        co.set_argument('--disable-gpu')
+        
+        # نکته کلیدی: در DrissionPage حالت Headless را از خود مرورگر فعال نکنید
+        # ما آن را توسط Display (Xvfb) مخفی می‌کنیم. این باعث می‌شود کلودفلر شک نکند.
+        
+        page = ChromiumPage(co)
+        
+        print("🚀 در حال ورود به سایت...")
+        page.get('https://dexscreener.com/')
+        
+        # ۲. استراتژی عبور از Cloudflare
+        # بررسی می‌کنیم آیا عنوان صفحه "Just a moment" است یا خیر
+        attempts = 0
+        while attempts < 3:
+            if "Just a moment" in page.title or "Attention Required" in page.title:
+                print(f"⚠️ پشت دیوارهای امنیتی هستیم (تلاش {attempts+1})...")
+                time.sleep(10)
+                # اگر دکمه‌ای برای تایید انسان بودن هست، رویش کلیک کن (مخصوص DrissionPage)
+                if page.ele('@type=checkbox', timeout=2):
+                    page.ele('@type=checkbox').click()
+                elif page.ele('text:Verify you are human', timeout=2):
+                    page.ele('text:Verify you are human').click()
+                attempts += 1
+            else:
+                break
+        
+        # ۳. انتظار برای جدول
+        print("⏳ منتظر لود شدن جدول...")
+        if page.wait.ele_appearing('.ds-dex-table', timeout=40):
+            print("✅ جدول پیدا شد!")
+            
+            # اسکرول کوتاه برای اطمینان از لود دیتا
+            page.scroll.down(500)
+            time.sleep(2)
 
-    new_data = data_list[12:]
+            # ۴. استخراج داده‌ها (بسیار سریع‌تر از سلنیوم)
+            table_text = page.ele('.ds-dex-table').text
+            data_list = table_text.splitlines()
 
-    dl_list = ['750','3','210','880','780','150','WP','720','V4','20','50','70','60' ,'CPMM', '180', '620', '80','100V3', 'V3', '200', 'V1' , '30' ,'OOPS', '100', '550','130' ,'CLMM','DLMM', '40', '600', '300', 'V2', '500',  '110', 'DYN' , 'DYN2', '/', '1000' , '10','310', '850', '120', '660', '510', '530']
+            # استخراج لینک‌ها
+            links = page.eles('tag:a')
+            contracts = []
+            for link in links:
+                href = link.attr('href')
+                if href and '/' in href:
+                    part = href.split('/')[-1]
+                    if len(part) > 30: # تشخیص آدرس کنتراکت
+                        contracts.append(part)
 
-    nd = []
+            # ۵. پردازش داده‌ها (همان منطق کد خودت)
+            titles = ['RANK', 'TOKEN', 'EXCHANGE', 'FULL NAME', 'PRICE', 'AGE', 'TXNS', 'VOLUME', 'MAKERS', '5M', '1H', '6H', '24H', 'LIQUIDITY', 'MCAP']
+            dl_list = ['750', '3', '210', '880', '780', 'WP', 'V4', 'V3', 'V2', '/', 'CPMM', 'CLMM', 'V1', '100', '200']
+            
+            clean_data = [x for x in data_list if x not in dl_list and len(x) > 0]
+            
+            rows = []
+            for i in range(0, len(clean_data) - 14, 15):
+                rows.append(clean_data[i:i+15])
 
-    def ah (list2) :
-      for asl in new_data :
-        if asl not in list2 :
-          nd.append(asl)
-          
-    list2 = dl_list
-    result = ah(list2)    
-    arzha = []
-    for ia in range (0, len(nd), 15) :
-      arz = nd[ia : ia +15]
-      arzha.append(arz)
-    pd= pandas.DataFrame(arzha , columns= titles)
-    ls_con=[]
-    def token_add() :
-        options1 = Options()
-        options.add_argument("--headless")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--disable-gpu")
-        options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64; rv:136.0) Gecko/20100101 Firefox/136.0")
-        path_geckodriver1 = '/usr/bin/geckodriver'
-        service_path1 = Service(path_geckodriver1)
-        bot_ertebati = webdriver.Firefox(service=service_path1,options=options1)
-        bot_ertebati.get('https://dexscreener.com/')
-        bot_ertebati.implicitly_wait(20)   
-        source_site = bot_ertebati.page_source
-    
-    
-        z=requests.get('https://dexscreener.com/')
-        soup = BeautifulSoup(z.text , 'html.parser')
-        y = soup.find_all('a' , class_= 'ds-dex-table-row ds-dex-table-row-top')
-        t = r'" href="([^".]*[a-z0-9])"'
-        v = re.findall(t, source_site)
-    
+            if rows:
+                df = pd.DataFrame(rows, columns=titles)
+                
+                # پر کردن ستون کنتراکت
+                if contracts:
+                    df['CONTRACT ADDRESS'] = (contracts * (len(df)//len(contracts)+1))[:len(df)]
+                else:
+                    df['CONTRACT ADDRESS'] = "Not Found"
 
-        for i in v :
-            if len(i) >= 20 :
-                ls_con.append(i)
+                csv_name = 'dex_final.csv'
+                df.to_csv(csv_name, index=False, encoding='utf-8-sig')
+                print(f"📊 فایل CSV با {len(df)} ردیف ساخته شد.")
 
-    
-    token_add()
-    if len(pd) == len(ls_con) :
-        pd['CONTRACT ADDRESS']= ls_con 
-    else:
-        pd['CONTRACT ADDRESS'] = ls_con + ls_con[1]
+                # ارسال ایمیل
+                yag = yagmail.SMTP('dexscreeneramirzamani@gmail.com', 'urcs rehx ttyt hzbv')
+                yag.send(
+                    to='amirhosseinzamanifarsi@gmail.com',
+                    subject='DexScreener Live Report',
+                    contents='گزارش جدید پیوست شد.',
+                    attachments=csv_name
+                )
+                print("✉️ ایمیل ارسال شد.")
+            else:
+                print("⚠️ جدول خالی بود یا ساختار تغییر کرده است.")
+                page.get_screenshot('empty_table.png')
 
+        else:
+            print("❌ هنوز پشت کپچا هستیم یا سایت لود نشد.")
+            page.get_screenshot('cloudflare_stuck.png')
 
-    csvname = f'dexscrrener.csv'
-    csvfile = pd.to_csv(csvname , index=False , encoding= 'utf-8')
+    except Exception as e:
+        print(f"❌ خطا: {e}")
+        
+    finally:
+        # بستن تمیز برای جلوگیری از هنگ کردن سرور
+        if page:
+            page.quit()
+        if display:
+            display.stop()
+        print("--- پایان عملیات ---")
 
-    bot_ertebati.quit()
+# اجرا
+timing()
+schedule.every(10).minutes.do(timing)
 
-  #...send email
-
-    ersal_konandeh = 'dexscreeneramirzamani@gmail.com'
-    password = 'urcs rehx ttyt hzbv'
-    file_ersali = csvname
-    con = 'test'
-    daryaft_konandeh = 'amirhosseinzamanifarsi@gmail.com'
-    yag = yagmail.SMTP(ersal_konandeh , password)
-    yagyag = yag.send(daryaft_konandeh ,con,file_ersali)
-    print ('file ba movafaghiat ersal shod.')
-#schedule.every(1).minute.do(timing)
-while True :
+while True:
     schedule.run_pending()
     time.sleep(1)
-  
-
-
-
-
-
-
