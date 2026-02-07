@@ -7,4 +7,8 @@ Traceback (most recent call last):
     from distutils.version import LooseVersion
 ModuleNotFoundError: No module named 'distutils'
 (myenv) root@394251:~/dexpy# 
+Traceback (most recent call last):
+  File "/root/dexpy/Emi.py", line 1, in <module>
+    import undetected_chromedriver as uc
+ModuleNotFoundError: No module named 'undetected_chromedriver'
 
