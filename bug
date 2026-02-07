@@ -1,14 +1,29 @@
-Traceback (most recent call last):
-  File "/root/dexpy/Emi.py", line 1, in <module>
-    import undetected_chromedriver as uc
-  File "/root/dexpy/myenv/lib/python3.12/site-packages/undetected_chromedriver/__init__.py", line 44, in <module>
-    from .patcher import IS_POSIX
-  File "/root/dexpy/myenv/lib/python3.12/site-packages/undetected_chromedriver/patcher.py", line 4, in <module>
-    from distutils.version import LooseVersion
-ModuleNotFoundError: No module named 'distutils'
-(myenv) root@394251:~/dexpy# 
-Traceback (most recent call last):
-  File "/root/dexpy/Emi.py", line 1, in <module>
-    import undetected_chromedriver as uc
-ModuleNotFoundError: No module named 'undetected_chromedriver'
+-- شروع تسک: 13:58:17 ---
+❌ خطای بحرانی: Message: session not created: cannot connect to chrome at 127.0.0.1:38957
+from session not created: This version of ChromeDriver only supports Chrome version 145
+Current browser version is 144.0.7559.132
+Stacktrace:
+#0 0x61d0fed6dd0a <unknown>
+#1 0x61d0fe77d682 <unknown>
+#2 0x61d0fe7c19cf <unknown>
+#3 0x61d0fe7c0790 <unknown>
+#4 0x61d0fe7b5791 <unknown>
+#5 0x61d0fe8078de <unknown>
+#6 0x61d0fe806fcc <unknown>
+#7 0x61d0fe7c488f <unknown>
+#8 0x61d0fe7c5651 <unknown>
+#9 0x61d0fed32159 <unknown>
+#10 0x61d0fed35061 <unknown>
+#11 0x61d0fed1e919 <unknown>
+#12 0x61d0fed35c2e <unknown>
+#13 0x61d0fed04c90 <unknown>
+#14 0x61d0fed5a358 <unknown>
+#15 0x61d0fed5a528 <unknown>
+#16 0x61d0fed6c353 <unknown>
+#17 0x7b884d89caa4 <unknown>
+#18 0x7b884d929c6c <unknown>
+
+--- پایان و آزادسازی منابع ---
+
+
 
