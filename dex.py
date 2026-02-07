@@ -10,64 +10,70 @@ import os
 def timing():
     print(f"\n--- شروع تسک جدید: {time.strftime('%H:%M:%S')} ---")
     
-    # ۱. راه‌اندازی نمایشگر مجازی (برای اینکه مرورگر فکر کند مانیتور دارد)
+    # ۱. راه‌اندازی نمایشگر مجازی (حیاتی برای لینوکس)
     display = Display(visible=0, size=(1920, 1080))
     display.start()
     
     page = None
     try:
-        # تنظیمات مرورگر برای مخفی ماندن کامل
+        # تنظیمات مرورگر
         co = ChromiumOptions()
         co.set_argument('--no-sandbox')
         co.set_argument('--disable-dev-shm-usage')
         co.set_argument('--disable-gpu')
         
-        # نکته کلیدی: در DrissionPage حالت Headless را از خود مرورگر فعال نکنید
-        # ما آن را توسط Display (Xvfb) مخفی می‌کنیم. این باعث می‌شود کلودفلر شک نکند.
-        
+        # حالت Headless را False می‌گذاریم چون Display داریم (این برای عبور از کلودفلر بهتر است)
         page = ChromiumPage(co)
         
         print("🚀 در حال ورود به سایت...")
         page.get('https://dexscreener.com/')
         
-        # ۲. استراتژی عبور از Cloudflare
-        # بررسی می‌کنیم آیا عنوان صفحه "Just a moment" است یا خیر
-        attempts = 0
-        while attempts < 3:
-            if "Just a moment" in page.title or "Attention Required" in page.title:
-                print(f"⚠️ پشت دیوارهای امنیتی هستیم (تلاش {attempts+1})...")
-                time.sleep(10)
-                # اگر دکمه‌ای برای تایید انسان بودن هست، رویش کلیک کن (مخصوص DrissionPage)
+        # ۲. سیستم عبور از Cloudflare (اصلاح شده)
+        # به جای صرفاً صبر کردن، چک می‌کنیم اگر دکمه‌ای هست کلیک کند
+        for i in range(3):
+            if "Just a moment" in page.title or "Access denied" in page.title:
+                print(f"⚠️ در حال تلاش برای عبور از امنیت (تلاش {i+1})...")
+                time.sleep(5)
+                
+                # تلاش برای پیدا کردن دکمه Cloudflare در Shadow DOM
+                # این دستورات سعی می‌کنند چک‌باکس را پیدا و کلیک کنند
                 if page.ele('@type=checkbox', timeout=2):
+                    print("🔘 دکمه کپچا پیدا شد. کلیک می‌کنیم...")
                     page.ele('@type=checkbox').click()
                 elif page.ele('text:Verify you are human', timeout=2):
                     page.ele('text:Verify you are human').click()
-                attempts += 1
+                
+                time.sleep(5)
             else:
                 break
         
-        # ۳. انتظار برای جدول
+        # ۳. انتظار برای جدول (دستور اصلاح شده برای رفع ارور شما)
         print("⏳ منتظر لود شدن جدول...")
-        if page.wait.ele_appearing('.ds-dex-table', timeout=40):
-            print("✅ جدول پیدا شد!")
+        
+        # *** تغییر مهم: استفاده از ele_display به جای ele_appearing ***
+        if page.wait.ele_display('.ds-dex-table', timeout=40):
+            print("✅ جدول پیدا شد! در حال استخراج...")
             
-            # اسکرول کوتاه برای اطمینان از لود دیتا
+            # کمی اسکرول برای لود شدن کامل دیتا
             page.scroll.down(500)
             time.sleep(2)
 
-            # ۴. استخراج داده‌ها (بسیار سریع‌تر از سلنیوم)
+            # ۴. استخراج داده‌ها
             table_text = page.ele('.ds-dex-table').text
             data_list = table_text.splitlines()
 
-            # استخراج لینک‌ها
+            # استخراج لینک‌ها برای کنتراکت
             links = page.eles('tag:a')
             contracts = []
             for link in links:
-                href = link.attr('href')
-                if href and '/' in href:
-                    part = href.split('/')[-1]
-                    if len(part) > 30: # تشخیص آدرس کنتراکت
-                        contracts.append(part)
+                try:
+                    href = link.attr('href')
+                    if href and '/' in href:
+                        part = href.split('/')[-1]
+                        if len(part) > 30: # تشخیص آدرس کنتراکت
+                            contracts.append(part)
+                except:
+                    continue
 
             # ۵. پردازش داده‌ها (همان منطق کد خودت)
             titles = ['RANK', 'TOKEN', 'EXCHANGE', 'FULL NAME', 'PRICE', 'AGE', 'TXNS', 'VOLUME', 'MAKERS', '5M', '1H', '6H', '24H', 'LIQUIDITY', 'MCAP']
@@ -84,7 +90,9 @@ def timing():
                 
                 # پر کردن ستون کنتراکت
                 if contracts:
-                    df['CONTRACT ADDRESS'] = (contracts * (len(df)//len(contracts)+1))[:len(df)]
+                    # منطق تکرار کنتراکت‌ها برای پر کردن جدول
+                    extended_contracts = (contracts * (len(df)//len(contracts)+1))[:len(df)]
+                    df['CONTRACT ADDRESS'] = extended_contracts
                 else:
                     df['CONTRACT ADDRESS'] = "Not Found"
 
@@ -102,18 +110,20 @@ def timing():
                 )
                 print("✉️ ایمیل ارسال شد.")
             else:
-                print("⚠️ جدول خالی بود یا ساختار تغییر کرده است.")
+                print("⚠️ جدول خالی بود. احتمالا ساختار سایت عوض شده.")
                 page.get_screenshot('empty_table.png')
 
         else:
             print("❌ هنوز پشت کپچا هستیم یا سایت لود نشد.")
+            # گرفتن عکس برای بررسی وضعیت
             page.get_screenshot('cloudflare_stuck.png')
+            print("📸 اسکرین‌شات وضعیت ذخیره شد: cloudflare_stuck.png")
 
     except Exception as e:
         print(f"❌ خطا: {e}")
         
     finally:
-        # بستن تمیز برای جلوگیری از هنگ کردن سرور
+        # بستن تمیز
         if page:
             page.quit()
         if display:
@@ -122,8 +132,9 @@ def timing():
 
 # اجرا
 timing()
-schedule.every(10).minutes.do(timing)
 
+# اسکژول
+schedule.every(10).minutes.do(timing)
 while True:
     schedule.run_pending()
     time.sleep(1)
