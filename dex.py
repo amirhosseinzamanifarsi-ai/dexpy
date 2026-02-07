@@ -8,9 +8,9 @@ import re
 import os
 
 def timing():
-    print(f"\n--- شروع تسک جدید: {time.strftime('%H:%M:%S')} ---")
+    print(f"\n--- شروع تسک: {time.strftime('%H:%M:%S')} ---")
     
-    # ۱. راه‌اندازی نمایشگر مجازی (حیاتی برای لینوکس)
+    # ۱. راه‌اندازی نمایشگر مجازی
     display = Display(visible=0, size=(1920, 1080))
     display.start()
     
@@ -21,48 +21,52 @@ def timing():
         co.set_argument('--no-sandbox')
         co.set_argument('--disable-dev-shm-usage')
         co.set_argument('--disable-gpu')
+        # نکته: حالت Headless را فعال نکنید، Display کار مخفی‌سازی را انجام می‌دهد
         
-        # حالت Headless را False می‌گذاریم چون Display داریم (این برای عبور از کلودفلر بهتر است)
         page = ChromiumPage(co)
         
         print("🚀 در حال ورود به سایت...")
         page.get('https://dexscreener.com/')
         
-        # ۲. سیستم عبور از Cloudflare (اصلاح شده)
-        # به جای صرفاً صبر کردن، چک می‌کنیم اگر دکمه‌ای هست کلیک کند
-        for i in range(3):
-            if "Just a moment" in page.title or "Access denied" in page.title:
-                print(f"⚠️ در حال تلاش برای عبور از امنیت (تلاش {i+1})...")
-                time.sleep(5)
+        # ۲. تلاش برای عبور از کلودفلر (Cloudflare Bypass)
+        # به جای ۳ بار، ۱۰ بار چک می‌کنیم چون گاهی طول می‌کشد
+        for i in range(10):
+            title = page.title.lower()
+            if "just a moment" in title or "access denied" in title or "attention required" in title:
+                print(f"⚠️ در حال تلاش برای عبور از امنیت (تلاش {i+1}/10)...")
                 
-                # تلاش برای پیدا کردن دکمه Cloudflare در Shadow DOM
-                # این دستورات سعی می‌کنند چک‌باکس را پیدا و کلیک کنند
+                # تلاش برای پیدا کردن و کلیک روی دکمه کپچا
+                # این دستور در تمام فریم‌ها و ShadowRootها می‌گردد
                 if page.ele('@type=checkbox', timeout=2):
-                    print("🔘 دکمه کپچا پیدا شد. کلیک می‌کنیم...")
+                    print("🔘 دکمه چک‌باکس پیدا شد! کلیک می‌کنیم...")
                     page.ele('@type=checkbox').click()
                 elif page.ele('text:Verify you are human', timeout=2):
+                    print("🔘 متن Verify پیدا شد! کلیک می‌کنیم...")
                     page.ele('text:Verify you are human').click()
                 
                 time.sleep(5)
             else:
+                print("✅ به نظر می‌رسد از سد امنیتی عبور کردیم.")
                 break
         
-        # ۳. انتظار برای جدول (دستور اصلاح شده برای رفع ارور شما)
-        print("⏳ منتظر لود شدن جدول...")
+        # ۳. انتظار برای جدول (رفع ارور قبلی شما)
+        print("⏳ منتظر لود شدن جدول (۶۰ ثانیه)...")
         
-        # *** تغییر مهم: استفاده از ele_display به جای ele_appearing ***
-        if page.wait.ele_display('.ds-dex-table', timeout=40):
-            print("✅ جدول پیدا شد! در حال استخراج...")
+        # *** اصلاح شده: استفاده از متد صحیح wait.ele_displayed ***
+        # اگر این متد در نسخه شما نبود، از page.ele استفاده می‌کنیم که خودش ویت دارد
+        
+        if page.ele('.ds-dex-table', timeout=60):
+            print("✅ جدول پیدا شد! شروع استخراج...")
             
-            # کمی اسکرول برای لود شدن کامل دیتا
-            page.scroll.down(500)
-            time.sleep(2)
+            # اسکرول
+            page.scroll.down(600)
+            time.sleep(3)
 
-            # ۴. استخراج داده‌ها
-            table_text = page.ele('.ds-dex-table').text
-            data_list = table_text.splitlines()
+            # ۴. استخراج
+            table_element = page.ele('.ds-dex-table')
+            data_list = table_element.text.splitlines()
 
-            # استخراج لینک‌ها برای کنتراکت
+            # استخراج لینک‌ها
             links = page.eles('tag:a')
             contracts = []
             for link in links:
@@ -70,12 +74,12 @@ def timing():
                     href = link.attr('href')
                     if href and '/' in href:
                         part = href.split('/')[-1]
-                        if len(part) > 30: # تشخیص آدرس کنتراکت
+                        if len(part) > 30: 
                             contracts.append(part)
                 except:
-                    continue
+                    pass
 
-            # ۵. پردازش داده‌ها (همان منطق کد خودت)
+            # ۵. پردازش (فیلتر کردن)
             titles = ['RANK', 'TOKEN', 'EXCHANGE', 'FULL NAME', 'PRICE', 'AGE', 'TXNS', 'VOLUME', 'MAKERS', '5M', '1H', '6H', '24H', 'LIQUIDITY', 'MCAP']
             dl_list = ['750', '3', '210', '880', '780', 'WP', 'V4', 'V3', 'V2', '/', 'CPMM', 'CLMM', 'V1', '100', '200']
             
@@ -88,9 +92,7 @@ def timing():
             if rows:
                 df = pd.DataFrame(rows, columns=titles)
                 
-                # پر کردن ستون کنتراکت
                 if contracts:
-                    # منطق تکرار کنتراکت‌ها برای پر کردن جدول
                     extended_contracts = (contracts * (len(df)//len(contracts)+1))[:len(df)]
                     df['CONTRACT ADDRESS'] = extended_contracts
                 else:
@@ -101,29 +103,29 @@ def timing():
                 print(f"📊 فایل CSV با {len(df)} ردیف ساخته شد.")
 
                 # ارسال ایمیل
-                yag = yagmail.SMTP('dexscreeneramirzamani@gmail.com', 'urcs rehx ttyt hzbv')
-                yag.send(
-                    to='amirhosseinzamanifarsi@gmail.com',
-                    subject='DexScreener Live Report',
-                    contents='گزارش جدید پیوست شد.',
-                    attachments=csv_name
-                )
-                print("✉️ ایمیل ارسال شد.")
+                try:
+                    yag = yagmail.SMTP('dexscreeneramirzamani@gmail.com', 'urcs rehx ttyt hzbv')
+                    yag.send(
+                        to='amirhosseinzamanifarsi@gmail.com',
+                        subject='DexScreener Live Report',
+                        contents='گزارش جدید پیوست شد.',
+                        attachments=csv_name
+                    )
+                    print("✉️ ایمیل ارسال شد.")
+                except Exception as e:
+                    print(f"خطا در ارسال ایمیل: {e}")
             else:
-                print("⚠️ جدول خالی بود. احتمالا ساختار سایت عوض شده.")
-                page.get_screenshot('empty_table.png')
+                print("⚠️ جدول دیتا نداشت.")
+                page.get_screenshot('empty_data.png')
 
         else:
-            print("❌ هنوز پشت کپچا هستیم یا سایت لود نشد.")
-            # گرفتن عکس برای بررسی وضعیت
-            page.get_screenshot('cloudflare_stuck.png')
-            print("📸 اسکرین‌شات وضعیت ذخیره شد: cloudflare_stuck.png")
+            print("❌ تایم‌اوت: جدول لود نشد (هنوز پشت کپچا هستیم).")
+            page.get_screenshot('blocked_final.png')
 
     except Exception as e:
-        print(f"❌ خطا: {e}")
+        print(f"❌ خطای کلی: {e}")
         
     finally:
-        # بستن تمیز
         if page:
             page.quit()
         if display:
@@ -132,9 +134,8 @@ def timing():
 
 # اجرا
 timing()
-
-# اسکژول
 schedule.every(10).minutes.do(timing)
+
 while True:
     schedule.run_pending()
     time.sleep(1)
