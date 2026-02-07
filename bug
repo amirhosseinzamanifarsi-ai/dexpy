@@ -1,29 +1,8 @@
-raceback (most recent call last):
-  File "/root/dexpy/Jadid.py", line 102, in <module>
-    schedule.run_pending()
-  File "/root/dexpy/myenv/lib/python3.12/site-packages/schedule/__init__.py", line 854, in run_pending
-    default_scheduler.run_pending()
-  File "/root/dexpy/myenv/lib/python3.12/site-packages/schedule/__init__.py", line 101, in run_pending
-    self._run_job(job)
-  File "/root/dexpy/myenv/lib/python3.12/site-packages/schedule/__init__.py", line 173, in _run_job
-    ret = job.run()
-          ^^^^^^^^^
-  File "/root/dexpy/myenv/lib/python3.12/site-packages/schedule/__init__.py", line 691, in run
-    ret = self.job_func()
-          ^^^^^^^^^^^^^^^
-  File "/root/dexpy/Jadid.py", line 28, in timing
-    driver = webdriver.Firefox(service=service, options=options)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/dexpy/myenv/lib/python3.12/site-packages/selenium/webdriver/firefox/webdriver.py", line 69, in __init__
-    super().__init__(command_executor=executor, options=options)
-  File "/root/dexpy/myenv/lib/python3.12/site-packages/selenium/webdriver/remote/webdriver.py", line 208, in __init__
-    self.start_session(capabilities)
-  File "/root/dexpy/myenv/lib/python3.12/site-packages/selenium/webdriver/remote/webdriver.py", line 292, in start_session
-    response = self.execute(Command.NEW_SESSION, caps)["value"]
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/dexpy/myenv/lib/python3.12/site-packages/selenium/webdriver/remote/webdriver.py", line 347, in execute
-    self.error_handler.check_response(response)
-  File "/root/dexpy/myenv/lib/python3.12/site-packages/selenium/webdriver/remote/errorhandler.py", line 229, in check_response
-    raise exception_class(message, screen, stacktrace)
-selenium.common.exceptions.TimeoutException: Message: Failed to read marionette port
+Scheduler started...
+Starting task at 2026-02-07 08:04:03
+Error in timing(): Message: Failed to read marionette port
+
+Starting task at 2026-02-07 08:07:14
+Error in timing(): Message: Failed to read marionette port
+
 
