@@ -26,7 +26,7 @@ def timing():
         
         # حذف ورژن هاردکد شده برای جلوگیری از تداخل ورژن‌های بعدی
         print("🚀 در حال باز کردن مرورگر...")
-        driver = uc.Chrome(options=options, headless=False) 
+        driver = uc.Chrome(options=options,version_main=144 headless=False) 
         
         driver.get('https://dexscreener.com/')
         
