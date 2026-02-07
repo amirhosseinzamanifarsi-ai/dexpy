@@ -1,95 +1,99 @@
-import os
-import time
-import re
-import pandas as pd
-import yagmail
-import schedule
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
+import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from pyvirtualdisplay import Display
+import pandas as pd
+import yagmail
+import schedule
+import time
+import re
+import os
 
 def timing():
-    print(f"\n--- شروع تسک: {time.strftime('%Y-%m-%d %H:%M:%S')} ---")
+    print(f"\n--- شروع تسک: {time.strftime('%H:%M:%S')} ---")
     
-    # راه‌اندازی نمایشگر مجازی
-    display = Display(visible=0, size=(1366, 768))
+    # راه اندازی نمایشگر مجازی برای محیط سرور
+    display = Display(visible=0, size=(1920, 1080))
     display.start()
     
     driver = None
     try:
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--remote-debugging-port=9222")
-        # هویت‌سازی برای جلوگیری از بلاک شدن
-        chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
-
-        # در اکثر سرورهای لینوکس، کروم در این مسیر نصب می‌شود
-        driver = webdriver.Chrome(options=chrome_options)
+        options = uc.ChromeOptions()
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
         
-        driver.set_page_load_timeout(60)
+        # استفاده از undetected-chromedriver برای دور زدن کلودفلر
+        driver = uc.Chrome(options=options, headless=True) 
+        
+        print("🌐 در حال باز کردن سایت...")
         driver.get('https://dexscreener.com/')
         
-        # صبر برای لود شدن جدول
-        wait = WebDriverWait(driver, 30)
-        table = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".ds-dex-table")))
+        # انتظار بیشتر برای لود شدن کامل (سایت سنگین است)
+        wait = WebDriverWait(driver, 40)
         
-        print("✅ صفحه لود شد. در حال استخراج...")
-        time.sleep(5) 
+        # تلاش برای پیدا کردن جدول
+        try:
+            table = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".ds-dex-table")))
+            print("✅ جدول با موفقیت پیدا شد.")
+        except:
+            # اگر پیدا نشد، اسکرین شات بگیر تا بفهمیم مشکل چیه (کپچا یا بلاک)
+            driver.save_screenshot("error_screen.png")
+            print("❌ جدول پیدا نشد. اسکرین‌شات ذخیره شد (error_screen.png)")
+            return
 
-        # استخراج متن جدول
-        data_list = table.text.splitlines()
+        time.sleep(5)
         
-        # استخراج آدرس‌ها از لینک‌ها
+        # استخراج داده‌ها
+        data_list = table.text.splitlines()
         source = driver.page_source
+        
+        # استخراج آدرس کنتراکت‌ها
         links = re.findall(r'href="/([^"]+)"', source)
         contracts = [l.split('/')[-1] for l in links if len(l.split('/')[-1]) > 30]
 
-        # پردازش داده‌ها
+        # سازماندهی داده‌ها
         titles = ['RANK', 'TOKEN', 'EXCHANGE', 'FULL NAME', 'PRICE', 'AGE', 'TXNS', 'VOLUME', 'MAKERS', '5M', '1H', '6H', '24H', 'LIQUIDITY', 'MCAP']
         
-        # فیلتر کردن ردیف‌های اضافی (منطق شما)
-        bad_words = ['750', '3', '210', '880', '780', 'WP', 'V4', 'V3', 'V2', 'V1', '/', 'CPMM', 'CLMM']
-        clean_nd = [x for x in data_list if x not in bad_words and len(x) > 0]
+        # فیلتر کردن کلمات مزاحم
+        dl_list = ['750', '3', '210', '880', '780', 'WP', 'V4', 'V3', 'V2', '/', 'CPMM']
+        clean_data = [x for x in data_list if x not in dl_list and len(x) > 0]
 
         rows = []
-        for i in range(0, len(clean_nd) - 14, 15):
-            rows.append(clean_nd[i:i+15])
+        for i in range(0, len(clean_data) - 14, 15):
+            rows.append(clean_data[i:i+15])
 
         if rows:
             df = pd.DataFrame(rows, columns=titles)
-            # ست کردن کنتراکت‌ها
             df['CONTRACT ADDRESS'] = (contracts * (len(df)//len(contracts)+1))[:len(df)]
             
-            csv_name = 'report.csv'
-            df.to_csv(csv_name, index=False, encoding='utf-8-sig')
+            csv_file = 'dex_report.csv'
+            df.to_csv(csv_file, index=False, encoding='utf-8-sig')
             
             # ارسال ایمیل
             yag = yagmail.SMTP('dexscreeneramirzamani@gmail.com', 'urcs rehx ttyt hzbv')
-            yag.send('amirhosseinzamanifarsi@gmail.com', 'Update Report', 'فایل جدید پیوست شد.', attachments=csv_name)
+            yag.send('amirhosseinzamanifarsi@gmail.com', 'DexScreener Report', 'گزارش جدید پیوست شد.', attachments=csv_file)
             print("🚀 ایمیل با موفقیت ارسال شد.")
         else:
-            print("⚠️ داده‌ای برای استخراج پیدا نشد.")
+            print("⚠️ داده‌ها ناقص بودند.")
 
     except Exception as e:
-        print(f"❌ خطای غیرمنتظره: {e}")
+        print(f"❌ خطای بحرانی: {str(e)}")
+        if driver:
+            driver.save_screenshot("critical_error.png")
     
     finally:
         if driver:
             driver.quit()
         display.stop()
-        print("--- پایان عملیات و پاکسازی حافظه ---")
+        print("--- پایان و پاکسازی ---")
 
-# اجرا
-timing() # یک بار اجرا برای تست فوری
-
+# تنظیم زمان‌بندی ۱۰ دقیقه‌ای
 schedule.every(10).minutes.do(timing)
+
+# اجرای اولین بار برای تست
+timing()
+
 while True:
     schedule.run_pending()
     time.sleep(1)
