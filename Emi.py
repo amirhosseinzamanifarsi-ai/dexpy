@@ -35,7 +35,7 @@ def timing():
         table = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".ds-dex-table")))
         
         print("✅ جدول با موفقیت لود شد.")
-        time.sleep(5) # زمان اضافی برای تکمیل لودینگ
+        time.sleep(20) # زمان اضافی برای تکمیل لودینگ
 
         # استخراج داده‌ها
         source_site = driver.page_source
