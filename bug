@@ -1,29 +1,25 @@
--- شروع تسک: 13:58:17 ---
-❌ خطای بحرانی: Message: session not created: cannot connect to chrome at 127.0.0.1:38957
-from session not created: This version of ChromeDriver only supports Chrome version 145
-Current browser version is 144.0.7559.132
+--- شروع تسک: 14:12:37 ---
+🌐 در حال باز کردن DexScreener...
+❌ خطای بحرانی: Message: 
 Stacktrace:
-#0 0x61d0fed6dd0a <unknown>
-#1 0x61d0fe77d682 <unknown>
-#2 0x61d0fe7c19cf <unknown>
-#3 0x61d0fe7c0790 <unknown>
-#4 0x61d0fe7b5791 <unknown>
-#5 0x61d0fe8078de <unknown>
-#6 0x61d0fe806fcc <unknown>
-#7 0x61d0fe7c488f <unknown>
-#8 0x61d0fe7c5651 <unknown>
-#9 0x61d0fed32159 <unknown>
-#10 0x61d0fed35061 <unknown>
-#11 0x61d0fed1e919 <unknown>
-#12 0x61d0fed35c2e <unknown>
-#13 0x61d0fed04c90 <unknown>
-#14 0x61d0fed5a358 <unknown>
-#15 0x61d0fed5a528 <unknown>
-#16 0x61d0fed6c353 <unknown>
-#17 0x7b884d89caa4 <unknown>
-#18 0x7b884d929c6c <unknown>
+#0 0x5c74b4e23a4a <unknown>
+#1 0x5c74b483c6a2 <unknown>
+#2 0x5c74b4891a8d <unknown>
+#3 0x5c74b4891cd1 <unknown>
+#4 0x5c74b48dd5c4 <unknown>
+#5 0x5c74b48da7f0 <unknown>
+#6 0x5c74b48838b2 <unknown>
+#7 0x5c74b48846a1 <unknown>
+#8 0x5c74b4de98a9 <unknown>
+#9 0x5c74b4dec7b1 <unknown>
+#10 0x5c74b4dd5ea9 <unknown>
+#11 0x5c74b4ded36e <unknown>
+#12 0x5c74b4dbc410 <unknown>
+#13 0x5c74b4e110c8 <unknown>
+#14 0x5c74b4e1129b <unknown>
+#15 0x5c74b4e22db8 <unknown>
+#16 0x73783a09caa4 <unknown>
+#17 0x73783a129c6c <unknown>
 
 --- پایان و آزادسازی منابع ---
-
-
 
