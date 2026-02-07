@@ -8,74 +8,74 @@ import re
 import os
 
 def timing():
-    print(f"\n--- شروع تسک: {time.strftime('%H:%M:%S')} ---")
+    print(f"\n--- شروع تسک هوشمند: {time.strftime('%H:%M:%S')} ---")
     
-    # ۱. راه‌اندازی نمایشگر مجازی برای مخفی کردن مرورگر در لینوکس
+    # ۱. راه‌اندازی نمایشگر مجازی
     display = Display(visible=0, size=(1920, 1080))
     display.start()
     
     page = None
     try:
-        # تنظیمات مرورگر برای عبور از آنتی‌بات
+        # تنظیمات پیشرفته برای عبور از شناسایی
         co = ChromiumOptions()
         co.set_argument('--no-sandbox')
         co.set_argument('--disable-dev-shm-usage')
         co.set_argument('--disable-gpu')
+        # جعل هویت مرورگر برای اینکه سایت فکر کند شما ویندوز ۱۰ هستید
+        co.set_user_agent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
         
-        # اتصال به مرورگر
         page = ChromiumPage(co)
         
-        print("🚀 در حال ورود به DexScreener...")
+        print("🌐 در حال فراخوانی DexScreener...")
         page.get('https://dexscreener.com/')
         
-        # ۲. سیستم هوشمند عبور از تیک "Verify you are human"
-        found_table = False
-        for i in range(12):  # ۱۲ تلاش (مجموعاً ۶۰ ثانیه)
+        # ۲. مکانیزم پیشرفته عبور از تیک Cloudflare
+        is_passed = False
+        for i in range(15):  # تلاش برای عبور (حدود ۷۵ ثانیه)
+            time.sleep(5)
             title = page.title.lower()
             
-            # اگر هنوز در صفحه کپچا هستیم
-            if "just a moment" in title or "attention required" in title or "verify" in title:
-                print(f"⚠️ کپچا مشاهده شد (تلاش {i+1}). در حال تلاش برای کلیک...")
+            # اگر در صفحه کپچا هستیم
+            if "just a moment" in title or "verify" in title or "attention required" in title:
+                print(f"🔄 تلاش {i+1}: سد امنیتی شناسایی شد. در حال جستجوی تیک...")
                 
-                # تلاش برای پیدا کردن دکمه در تمام لایه‌ها (Shadow DOM)
-                # کلیک با پارامتر by_js=False برای شبیه‌سازی حرکت فیزیکی موس
-                btn = page.ele('@type=checkbox', timeout=2) or page.ele('text:Verify you are human', timeout=2)
+                # جستجوی تیک در Shadow DOM و لایه‌های مخفی
+                # استفاده از متد ele که در DrissionPage لایه‌های داخلی را هم می‌بیند
+                btn = page.ele('@type=checkbox', timeout=2) or \
+                      page.ele('text:Verify you are human', timeout=2) or \
+                      page.ele('.ctp-checksum-container', timeout=2)
                 
                 if btn:
-                    print("🔘 دکمه تیک پیدا شد! کلیک فیزیکی انجام می‌شود...")
-                    btn.click(by_js=False)
-                    time.sleep(5)
+                    print("🔘 دکمه تیک پیدا شد! کلیک فیزیکی (Physical Click) انجام می‌شود...")
+                    btn.click(by_js=False) 
+                    time.sleep(10) # صبر برای تایید پس از کلیک
             
-            # بررسی اینکه آیا جدول لود شده یا نه
-            if page.ele('.ds-dex-table', timeout=2):
-                print("✅ با موفقیت از سد کپچا عبور کردیم!")
-                found_table = True
+            # بررسی اینکه آیا به محتوای اصلی رسیدیم
+            if page.ele('.ds-dex-table', timeout=3):
+                print("✅ تیک زده شد و جدول لود گردید!")
+                is_passed = True
                 break
-            
+        
+        # ۳. استخراج داده‌ها
+        if is_passed:
+            print("📊 در حال استخراج و پردازش داده‌های جدول...")
             time.sleep(5)
-
-        # ۳. استخراج داده‌ها در صورت موفقیت
-        if found_table:
-            print("📊 در حال استخراج اطلاعات جدول...")
-            time.sleep(3) # فرصت برای لود کامل قیمت‌ها
             
             table_element = page.ele('.ds-dex-table')
-            data_list = table_element.text.splitlines()
+            data_text = table_element.text
+            data_list = data_text.splitlines()
 
-            # استخراج آدرس کنتراکت‌ها از لینک‌ها
+            # استخراج کنتراکت‌ها از لینک‌ها
             links = page.eles('tag:a')
             contracts = []
-            for link in links:
-                try:
-                    href = link.attr('href')
-                    if href and '/' in href:
-                        part = href.split('/')[-1]
-                        if len(part) > 30: # معمولاً آدرس‌های سولانا یا اتریوم بلند هستند
-                            contracts.append(part)
-                except:
-                    continue
+            for l in links:
+                href = l.attr('href')
+                if href and '/' in href:
+                    part = href.split('/')[-1]
+                    if len(part) > 30:
+                        contracts.append(part)
 
-            # ۴. فیلتر و تمیزکاری داده‌ها
+            # ۴. تمیزکاری و فیلتر (منطق خودت)
             titles = ['RANK', 'TOKEN', 'EXCHANGE', 'FULL NAME', 'PRICE', 'AGE', 'TXNS', 'VOLUME', 'MAKERS', '5M', '1H', '6H', '24H', 'LIQUIDITY', 'MCAP']
             dl_list = ['750', '3', '210', '880', '780', 'WP', 'V4', 'V3', 'V2', '/', 'CPMM', 'CLMM', 'V1', '100', '200']
             
@@ -88,46 +88,47 @@ def timing():
             if rows:
                 df = pd.DataFrame(rows, columns=titles)
                 
-                # اضافه کردن ستون کنتراکت
                 if contracts:
                     extended_contracts = (contracts * (len(df)//len(contracts)+1))[:len(df)]
                     df['CONTRACT ADDRESS'] = extended_contracts
                 
-                # ۵. ذخیره و ارسال
-                csv_name = 'dex_report_final.csv'
-                df.to_csv(csv_name, index=False, encoding='utf-8-sig')
-                print(f"✅ فایل با {len(df)} ردیف آماده شد.")
+                # ذخیره در فایل
+                csv_file = 'dex_report_final.csv'
+                df.to_csv(csv_file, index=False, encoding='utf-8-sig')
+                print(f"📝 فایل با {len(df)} ردیف ساخته شد.")
 
+                # ۵. ارسال ایمیل
                 try:
                     yag = yagmail.SMTP('dexscreeneramirzamani@gmail.com', 'urcs rehx ttyt hzbv')
                     yag.send(
                         to='amirhosseinzamanifarsi@gmail.com',
-                        subject=f'DexScreener Report {time.strftime("%H:%M")}',
-                        contents='گزارش استخراج شده پیوست گردید.',
-                        attachments=csv_name
+                        subject=f'Dex Report - {time.strftime("%H:%M")}',
+                        contents='گزارش نهایی استخراج شد.',
+                        attachments=csv_file
                     )
                     print("✉️ ایمیل با موفقیت ارسال شد.")
-                except Exception as e:
-                    print(f"❌ خطا در ارسال ایمیل: {e}")
+                except Exception as mail_err:
+                    print(f"❌ خطا در ارسال ایمیل: {mail_err}")
             else:
-                print("⚠️ دیتایی برای پردازش یافت نشد.")
+                print("⚠️ جدول یافت شد اما خالی بود.")
         else:
-            print("❌ شکست در عبور از کپچا. اسکرین‌شات جدید گرفته شد.")
-            page.get_screenshot('captcha_failed.png')
+            print("❌ شکست در عبور از تیک کپچا پس از ۱۵ تلاش.")
+            page.get_screenshot('final_status.png')
+            print("📸 اسکرین‌شات نهایی ذخیره شد: final_status.png")
 
     except Exception as e:
-        print(f"❌ خطای سیستم: {e}")
+        print(f"❌ خطای بحرانی سیستم: {e}")
     
     finally:
         if page:
             page.quit()
         display.stop()
-        print("--- پایان عملیات و آزادسازی منابع ---")
+        print("--- پایان عملیات ---")
 
-# زمان‌بندی اجرای خودکار هر ۱۰ دقیقه
+# زمان‌بندی ۱۰ دقیقه‌ای
 schedule.every(10).minutes.do(timing)
 
-# اجرای بار اول بلافاصله
+# اجرای اول برای تست
 timing()
 
 while True:
