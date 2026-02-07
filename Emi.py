@@ -25,7 +25,7 @@ def timing():
         
         # راه‌اندازی مرورگر با قابلیت عبور از کلودفلر
         # تنظیم ورژن به صورت دستی اگر خودکار عمل نکرد
-        driver = uc.Chrome(options=options, headless=False) # در UC حالت headless باید False باشد تا XVFB کار کند
+        driver = uc.Chrome(options=options,version_main=144 ,headless=False) # در UC حالت headless باید False باشد تا XVFB کار کند
         
         print("🌐 در حال باز کردن DexScreener...")
         driver.get('https://dexscreener.com/')
