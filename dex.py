@@ -6,18 +6,17 @@ import schedule
 import time
 import os
 
-# ==============================================================================
-# 🔐 تنظیمات پروکسی جدید (جایگزین شد)
-# ==============================================================================
-PROXY_IP = "107.172.163.27"
-PROXY_PORT = "6543"
-PROXY_USER = "yahfeawc"
-PROXY_PASS = "37tdqv7zdv4b"
-# ==============================================================================
+# --- تنظیمات ---
+# اگر تور را نصب کردی، این را True بگذار. اگر می‌خواهی بدون پروکسی تست کنی False کن.
+USE_TOR = True 
+EMAIL_USER = 'dexscreeneramirzamani@gmail.com'
+EMAIL_PASS = 'urcs rehx ttyt hzbv'
+RECIPIENT = 'amirhosseinzamanifarsi@gmail.com'
 
 def timing():
-    print(f"\n--- تلاش با پروکسی جدید: {time.strftime('%H:%M:%S')} ---")
+    print(f"\n--- شروع تسک جدید: {time.strftime('%H:%M:%S')} ---")
     
+    # ۱. مدیریت نمایشگر مجازی
     display = Display(visible=0, size=(1920, 1080))
     display.start()
     
@@ -27,81 +26,122 @@ def timing():
         co.set_argument('--no-sandbox')
         co.set_argument('--disable-dev-shm-usage')
         
-        # استفاده از فرمت پروکسی برای درایور
-        proxy_full = f"http://{PROXY_USER}:{PROXY_PASS}@{PROXY_IP}:{PROXY_PORT}"
-        co.set_proxy(proxy_full)
+        # ۲. تنظیم پروکسی (در صورت فعال بودن تور)
+        if USE_TOR:
+            print("🛡️ استفاده از پروکسی Tor (127.0.0.1:9050)")
+            co.set_proxy("socks5://127.0.0.1:9050")
         
-        # جعل هویت برای عبور از کلودفلر
-        co.set_user_agent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36')
+        # جعل هویت حرفه‌ای
+        co.set_user_agent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36')
         
         page = ChromiumPage(co)
         
-        print(f"🌐 اتصال به دکس‌اسکرینر از طریق آی‌پی آمریکا ({PROXY_IP})...")
-        page.get('https://dexscreener.com/', retry=3, interval=5)
+        print("🌐 در حال فراخوانی DexScreener...")
+        page.get('https://dexscreener.com/', retry=3, interval=10)
         
-        # مکانیزم عبور از لایه امنیتی
-        is_passed = False
-        for i in range(12):
+        # ۳. سیستم عبور از کپچا
+        found_table = False
+        for i in range(15):
             time.sleep(5)
             
-            # ۱. چک کردن لود شدن جدول
+            # الف: چک کردن وجود جدول
             if page.ele('.ds-dex-table', timeout=2):
-                print("✅ پیروزی! جدول لود شد.")
-                is_passed = True
+                print("✅ جدول با موفقیت لود شد!")
+                found_table = True
                 break
             
-            # ۲. هندل کردن تیک کپچا
-            if "verify" in page.title.lower() or "just a moment" in page.title.lower():
+            # ب: شناسایی و کلیک روی تیک کپچا
+            title = page.title.lower()
+            if "verify" in title or "just a moment" in title:
                 print(f"⚠️ کپچا شناسایی شد (تلاش {i+1}). در حال کلیک...")
-                btn = page.ele('@type=checkbox', timeout=2) or page.ele('text:Verify you are human', timeout=2)
+                # جستجوی عمیق برای دکمه تیک
+                btn = page.ele('@type=checkbox', timeout=2) or \
+                      page.ele('text:Verify you are human', timeout=2)
+                
                 if btn:
+                    print("👆 کلیک فیزیکی روی دکمه انجام شد.")
                     btn.click(by_js=False)
-                    time.sleep(5)
+                    time.sleep(8)
             
-            # ۳. اگر صفحه در دسترس نبود (ERR_...)
-            if "This site can't be reached" in page.html:
-                print("❌ ارور: پروکسی هنوز متصل نیست یا پروتکل را قبول نمی‌کند.")
-                break
+            if i == 7: # رفرش میانی برای باز شدن گره احتمالی
+                print("🔄 رفرش صفحه...")
+                page.refresh()
 
-        if is_passed:
-            print("📊 شروع استخراج داده‌ها...")
-            table = page.ele('.ds-dex-table')
-            data_list = table.text.splitlines()
+        # ۴. استخراج و پردازش داده‌ها
+        if found_table:
+            print("📊 در حال جمع‌آوری اطلاعات...")
+            time.sleep(5) # صبر برای آپدیت نهایی قیمت‌ها
+            
+            # اسکرول برای لود شدن همه ردیف‌ها
+            page.scroll.down(1000)
+            
+            table_element = page.ele('.ds-dex-table')
+            data_list = table_element.text.splitlines()
 
-            # استخراج کنتراکت‌ها
+            # استخراج آدرس‌های کنتراکت
             links = page.eles('tag:a')
-            contracts = [l.attr('href').split('/')[-1] for l in links if l.attr('href') and len(l.attr('href').split('/')[-1]) > 30]
+            contracts = []
+            for l in links:
+                try:
+                    href = l.attr('href')
+                    if href and '/' in href:
+                        part = href.split('/')[-1]
+                        if len(part) > 30: contracts.append(part)
+                except: pass
 
-            # فیلتر و ساخت CSV
+            # فیلتر و تمیزکاری
             titles = ['RANK', 'TOKEN', 'EXCHANGE', 'FULL NAME', 'PRICE', 'AGE', 'TXNS', 'VOLUME', 'MAKERS', '5M', '1H', '6H', '24H', 'LIQUIDITY', 'MCAP']
             dl_list = ['750', '3', '210', '880', '780', 'WP', 'V4', 'V3', 'V2', '/', 'CPMM', 'CLMM', 'V1', '100', '200']
             clean_data = [x for x in data_list if x not in dl_list and len(x) > 0]
             
-            rows = [clean_data[x:x+15] for x in range(0, len(clean_data)-14, 15)]
-            
+            rows = []
+            for i in range(0, len(clean_data) - 14, 15):
+                rows.append(clean_data[i:i+15])
+
             if rows:
                 df = pd.DataFrame(rows, columns=titles)
+                # اضافه کردن کنتراکت‌ها
                 if contracts:
-                    df['CONTRACT ADDRESS'] = (contracts * (len(df)//len(contracts)+1))[:len(df)]
+                    # حذف تکراری‌ها و مچ کردن
+                    unique_contracts = list(dict.fromkeys(contracts))
+                    extended_contracts = (unique_contracts * (len(df)//len(unique_contracts)+1))[:len(df)]
+                    df['CONTRACT ADDRESS'] = extended_contracts
                 
-                csv_file = 'dex_report.csv'
-                df.to_csv(csv_file, index=False, encoding='utf-8-sig')
-                
-                # ارسال ایمیل
-                yag = yagmail.SMTP('dexscreeneramirzamani@gmail.com', 'urcs rehx ttyt hzbv')
-                yag.send(to='amirhosseinzamanifarsi@gmail.com', subject='Report with Proxy', attachments=csv_file)
-                print("📧 ایمیل ارسال شد.")
+                csv_name = 'dex_final_report.csv'
+                df.to_csv(csv_name, index=False, encoding='utf-8-sig')
+                print(f"💾 فایل با {len(df)} ردیف ذخیره شد.")
+
+                # ۵. ارسال ایمیل
+                try:
+                    yag = yagmail.SMTP(EMAIL_USER, EMAIL_PASS)
+                    yag.send(
+                        to=RECIPIENT,
+                        subject=f'DexScreener Report - {time.strftime("%H:%M")}',
+                        contents='گزارش استخراج شده پیوست شد.',
+                        attachments=csv_name
+                    )
+                    print("📧 ایمیل با موفقیت ارسال شد.")
+                except Exception as e:
+                    print(f"❌ خطا در ارسال ایمیل: {e}")
             else:
-                print("⚠️ جدول پیدا شد اما خالی بود.")
+                print("⚠️ جدول پیدا شد اما ردیفی استخراج نشد.")
         else:
-            print("❌ شکست در عبور از امنیت.")
-            page.get_screenshot('proxy_debug.png')
+            print("❌ شکست در عبور از لایه‌های امنیتی.")
+            page.get_screenshot('final_failed.png')
 
     except Exception as e:
-        print(f"❌ خطا: {e}")
+        print(f"❌ خطای سیستمی: {e}")
     finally:
         if page: page.quit()
         display.stop()
+        print("--- پایان عملیات و آزادسازی رم ---")
 
-# اجرا
+# --- تنظیم زمان‌بندی ۱۰ دقیقه‌ای ---
+schedule.every(10).minutes.do(timing)
+
+# اجرای بار اول بلافاصله
 timing()
+
+while True:
+    schedule.run_pending()
+    time.sleep(1)
